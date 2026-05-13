@@ -92,12 +92,6 @@ export default function App() {
         { id: "23", name: "Protetor Solar", description: "Item obrigatório para o verão uruguaio.", goal: 1, reserved: 0, size: "Padrão" },
       ]
     },
-    {
-      title: "🛠️ Área de Testes",
-      items: [
-        { id: "99", name: "Item de Teste PIX", description: "Item de R$ 5,00 para validação do sistema PIX.", goal: 1, reserved: 0, size: "Teste" },
-      ]
-    }
   ]);
 
   const totalGoal = categories.reduce((acc, cat) => acc + cat.items.reduce((sum, item) => sum + item.goal, 0), 0);
