@@ -28,7 +28,7 @@ const CURIOSIDADES_SALTO = [
   "Luis Suárez e Edinson Cavani nasceram aqui! ⚽",
   "A Represa de Salto Grande é uma das maiores do continente.",
   "Salto é conhecida como a 'Capital do Citrus' do país. 🍊",
-  "O Rio Uruguai in Salto oferece um dos pores do sol mais lindos. 🌅",
+  "O Rio Uruguai em Salto oferece um dos pores do sol mais lindos. 🌅",
   "A arquitetura local preserva casarões históricos do século XIX.",
   "No inverno, as geadas são comuns e o frio é intenso! ❄️",
   "O Teatro Larrañaga é um ícone de luxo e cultura uruguaia.",
@@ -52,7 +52,7 @@ const CURIOSIDADES_SALTO = [
   "A cidade é um hub cultural importante do Norte uruguaio.",
   "Missionários em Salto caminham muito pelas 'calles' largas.",
   "O sotaque uruguaio aqui tem uma melodia única.",
-  "Salto é um lugar onde a história e o futuro se encontram."
+  "Salto é un lugar onde a história e o futuro se encontram."
 ];
 
 interface Item { id: string; name: string; description: string; goal: number; reserved: number; size: string; }
@@ -233,7 +233,7 @@ export default function App() {
                 item_id: selectedItem?.itemId,
                 item_nome: selectedItemData?.name,
                 quantidade: quantity,
-                mensagem: formData.mensagem || "Apoio enviado! 🙏"
+                mensagem: formData.mensagem || "Missão dada é missão cumprida! 🙏"
             }]);
             setIsPaid(true);
             if (selectedItem) {
@@ -369,7 +369,7 @@ export default function App() {
       ) : !showInventory ? (
         <div className="relative min-h-screen flex flex-col animate-tab">
           <div className="absolute inset-0 z-0 opacity-40" style={{ backgroundImage: 'radial-gradient(circle at top, #201a0d 0%, #0a0a0a 60%)' }} />
-          <nav className="relative w-full p-8 md:p-12 flex justify-between items-center max-w-[1400px] mx-auto z-50">
+          <nav className="relative w-full p-4 sm:p-8 md:p-12 flex justify-between items-center max-w-[1400px] mx-auto z-50">
             <div className="text-[#C9A84C] text-xl font-bold tracking-[0.3em]" style={{ fontFamily: 'Playfair Display, serif' }}>E · B</div>
             {tempSalto !== null && (
               <div className="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-full border border-white/10">
@@ -379,13 +379,12 @@ export default function App() {
             )}
           </nav>
           
-          <main className="relative z-10 flex-1 flex flex-col items-center justify-center text-center px-6 max-w-5xl mx-auto pb-20">
-            <h1 className="hero-headline text-6xl sm:text-9xl font-bold mb-8 leading-tight tracking-tight drop-shadow-lg">Elder Barbarini</h1>
+          <main className="relative z-10 flex-1 flex flex-col items-center justify-center text-center px-4 w-full max-w-5xl mx-auto pb-20">
+            <h1 className="hero-headline text-5xl sm:text-9xl font-bold mb-8 leading-tight tracking-tight drop-shadow-lg w-full">Elder Barbarini</h1>
             
-            {/* LOCALIZAÇÃO NO TOPO E CLICÁVEL */}
-            <button onClick={() => setShowMapModal(true)} className="location-pill flex items-center gap-3 bg-white/5 border border-[#C9A84C]/30 px-8 py-3.5 rounded-full mb-10 hover:bg-[#C9A84C]/10 transition-all active:scale-95 group shadow-[0_0_20px_rgba(201,168,76,0.1)] transition-all">
+            <button onClick={() => setShowMapModal(true)} className="location-pill flex items-center gap-3 bg-white/5 border border-[#C9A84C]/30 px-8 py-3.5 rounded-full mb-10 hover:bg-[#C9A84C]/10 transition-all active:scale-95 group shadow-[0_0_20px_rgba(201,168,76,0.1)] transition-all max-w-full">
               <MapPin size={18} className="text-[#C9A84C] group-hover:animate-bounce" strokeWidth={2} />
-              <span className="text-[0.7rem] tracking-[0.5em] uppercase font-bold text-[#FAFAFA]">Missão Uruguay · Salto</span>
+              <span className="text-[0.7rem] tracking-[0.2em] sm:tracking-[0.5em] uppercase font-bold text-[#FAFAFA]">Missão Uruguay · Salto</span>
             </button>
 
             <div className="flex gap-4 mb-10 text-[#C9A84C] font-mono text-sm tracking-widest uppercase">
@@ -394,22 +393,21 @@ export default function App() {
               <div className="flex flex-col items-center"><span className="text-2xl font-bold">{timeLeft.m}</span><span>Min</span></div>
             </div>
 
-            {/* CURIOSIDADES EMBAIXO DO COUNTDOWN */}
             <div className="glass-card bg-black/40 px-6 py-5 rounded-2xl mb-12 border border-[#D4AF37]/10 max-w-[450px] w-full h-[110px] flex flex-col items-center justify-center overflow-hidden shadow-inner transition-all">
                <div className="flex items-center gap-2 mb-2.5 text-[#D4AF37] opacity-60">
-                 <span className="text-[0.55rem] uppercase tracking-[0.4em] font-black">Fatos de Salto</span>
+                 <Sparkles size={14} />
+                 <span className="text-[0.55rem] uppercase tracking-[0.4em] font-black">Curiosidades sobre El Salto</span>
                </div>
                <div key={curiosityIndex} className="animate-curiosity text-[0.8rem] text-[#E5E7EB] font-light leading-snug px-2">
                   {CURIOSIDADES_SALTO[curiosityIndex]}
                </div>
             </div>
 
-            <div className="flex flex-col items-center w-full max-w-[850px] mb-20 relative px-10">
+            <div className="flex flex-col items-center w-full max-w-[850px] mb-20 relative px-6 sm:px-10">
               <button onClick={() => setShowInventory(true)} className="hero-cta text-black px-16 py-7 rounded-sm font-bold tracking-[0.25em] uppercase flex items-center gap-4 text-xs shadow-2xl transition-all mb-10">
                 <Heart size={20} fill="currentColor" /> Contribuye a mi mísion <ArrowRight size={20} />
               </button>
 
-              {/* VERSÍCULO SEM CAIXA */}
               <div className="text-center space-y-2 opacity-80 animate-in fade-in duration-1000">
                 <p className="italic text-xl sm:text-2xl text-[#E5E7EB] leading-relaxed font-serif px-4">
                   "Ide por todo o mundo, pregai o evangelho a toda criatura."
@@ -440,7 +438,7 @@ export default function App() {
                 <div key={donationIndex} className="animate-pop bg-transparent px-8 py-3 rounded-full flex flex-col items-center gap-1 border border-[#C9A84C]/30 shadow-none">
                   <div className="flex items-center gap-4">
                     <Users size={18} className="text-[#C9A84C]" />
-                    <span className="text-[0.75rem] uppercase tracking-[0.2em] text-[#D4AF37] font-bold">🙏 {ultimasDoacoes[donationIndex]?.nome_pessoa} Ajudou com {ultimasDoacoes[donationIndex]?.item_nome}!</span>
+                    <span className="text-[0.75rem] uppercase tracking-[0.2em] text-[#D4AF37] font-bold">🙏 {ultimasDoacoes[donationIndex]?.nome_pessoa} contribuiu com {ultimasDoacoes[donationIndex]?.item_nome}!</span>
                   </div>
                   {ultimasDoacoes[donationIndex]?.mensagem && (
                     <p className="text-[0.6rem] italic text-[#FAFAFA]/60 font-serif max-w-[250px] truncate">"{ultimasDoacoes[donationIndex].mensagem}"</p>
@@ -455,6 +453,7 @@ export default function App() {
                  <div className="flex justify-between items-end mb-5 text-left">
                     <div><p className="text-[0.6rem] uppercase tracking-[0.25em] text-[#6B7280] mb-2 font-medium">Missão em Progresso</p><p className="text-3xl font-bold text-[#C9A84C] tracking-tight">{Math.round(overallProgress)}%</p></div><Target className="text-[#C9A84C] mb-1 opacity-60" size={32} />
                  </div>
+                 
                  <div className="w-full h-2.5 bg-white/5 rounded-full overflow-hidden border border-white/5 shadow-inner relative">
                     <div className="h-full bg-gradient-to-r from-[#7A5C10] via-[#C9A84C] to-[#FAEFC8] transition-all duration-1000" style={{ width: `${overallProgress}%` }} />
                  </div>
@@ -463,6 +462,7 @@ export default function App() {
                     <div className="flex flex-col items-center gap-1"><Trophy size={12} /><span>50%</span></div>
                     <div className="flex flex-col items-center gap-1 opacity-60"><Plane size={12} className="rotate-90" /><span>Pronto!</span></div>
                  </div>
+
                  <p className="text-[0.7rem] text-[#888] mt-5 uppercase tracking-[0.2em] font-light"> {totalReserved} de {totalGoal} itens garantidos </p>
               </div>
             </header>
