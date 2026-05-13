@@ -30,7 +30,7 @@ export default function App() {
   const [showInventory, setShowInventory] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [showPixScreen, setShowPixScreen] = useState(false); 
-  const [isPaid, setIsPaid] = useState(false); // NOVO ESTADO AQUI
+  const [isPaid, setIsPaid] = useState(false);
   const [activeTab, setActiveTab] = useState("reserva");
   const [pixCopied, setPixCopied] = useState(false);
   const [quantity, setQuantity] = useState(1);
@@ -39,6 +39,9 @@ export default function App() {
   const [showMapModal, setShowMapModal] = useState(false);
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [pixData, setPixData] = useState<any>(null);
+  
+  // --- NOVO: Controle de carregamento para não bugar no F5 ---
+  const [estoqueCarregado, setEstoqueCarregado] = useState(false); 
 
   // LISTA DE ITENS COMPLETA
   const [categories, setCategories] = useState<Category[]>([
@@ -153,6 +156,39 @@ export default function App() {
     return () => clearInterval(interval);
   }, [showPixScreen, pixData, selectedItem, quantity]);
 
+  // --- NOVO: BUSCAR RESERVAS GLOBAIS AO CARREGAR O SITE ---
+  useEffect(() => {
+    const carregarEstoqueGlobal = async () => {
+      if (estoqueCarregado) return; // Roda apenas uma vez
+      
+      const { data, error } = await supabase
+        .from('doacoes_confirmadas')
+        .select('item_id, quantidade');
+        
+      if (data && !error) {
+        setCategories((prevCategories) => 
+          prevCategories.map((category) => ({
+            ...category,
+            items: category.items.map((item) => {
+              // Procura quantas vezes esse item já foi reservado no banco
+              const reservasBanco = data
+                .filter((d) => d.item_id === item.id)
+                .reduce((acc, curr) => acc + curr.quantidade, 0);
+                
+              return { 
+                ...item, 
+                reserved: Math.min(item.reserved + reservasBanco, item.goal) 
+              };
+            })
+          }))
+        );
+        setEstoqueCarregado(true);
+      }
+    };
+
+    carregarEstoqueGlobal();
+  }, [estoqueCarregado]);
+
   const handleSendWhatsApp = () => {
     const itemName = selectedItemData?.name ?? "item";
     const total = selectedItem ? (ITEM_PRICES_NUM[selectedItem.itemId] * quantity) : 0;
@@ -160,9 +196,29 @@ export default function App() {
     window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${msg}`, "_blank");
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // --- ALTERADO: INSERIDO O SUPABASE AQUI ---
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (selectedItem) {
+      
+      // 1. Salva no Supabase primeiro
+      const { error } = await supabase
+        .from('doacoes_confirmadas')
+        .insert([
+          { 
+            nome_pessoa: formData.name, 
+            item_id: selectedItem.itemId,
+            item_nome: selectedItemData?.name,
+            quantidade: quantity
+          }
+        ]);
+
+      if (error) {
+        alert("Erro ao conectar com o banco de dados. Tente novamente!");
+        return;
+      }
+
+      // 2. Atualiza a tela local e manda pro Zap
       setCategories((prev) => prev.map((category, idx) => idx === selectedItem.categoryIndex ? { ...category, items: category.items.map((item) => item.id === selectedItem.itemId ? { ...item, reserved: Math.min(item.reserved + quantity, item.goal) } : item ), } : category ));
       const msg = encodeURIComponent(`📋 *Nova Reserva — Elder Barbarini*\n🛍️ *Item:* ${quantity}x ${selectedItemData?.name}\n👤 *Nome:* ${formData.name}\n\nEstou ciente que devo comprar e entregar este item! ✅`);
       window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${msg}`, "_blank");
@@ -215,7 +271,7 @@ export default function App() {
               // --- TELA DO QR CODE ---
               <>
                 <header className="space-y-4">
-                  <h2 className="text-3xl md:text-5xl font-serif text-[#FAFAFA]" style={{ fontFamily: 'Playfair Display, serif' }}>{selectedItemData?.name}</h2>
+                 <h2 className="text-3xl md:text-5xl font-serif text-[#FAFAFA]" style={{ fontFamily: 'Playfair Display, serif' }}>{selectedItemData?.name}</h2>
                   <div className="bg-white/[0.02] border border-white/10 px-8 py-4 rounded-full inline-block shadow-inner">
                     <p className="text-[0.65rem] uppercase tracking-[0.4em] text-[#6B7280] mb-1 font-bold">Preço estimado</p>
                     <span className="text-4xl font-bold text-[#C9A84C] tracking-tighter">R$ {(selectedItem ? ITEM_PRICES_NUM[selectedItem.itemId] * quantity : 0).toFixed(2)}</span>
@@ -233,11 +289,11 @@ export default function App() {
                 <div className="w-full space-y-5">
                   <div className="flex items-center justify-between bg-black/50 px-5 py-4 rounded-2xl border border-white/10 shadow-inner group overflow-hidden">
                     <div className="flex-1 overflow-x-auto no-scrollbar text-left mr-4">
-                      <code className="text-[#C9A84C] text-sm tracking-tight font-mono whitespace-nowrap opacity-80 group-hover:opacity-100 transition-opacity">
+                     <code className="text-[#C9A84C] text-sm tracking-tight font-mono whitespace-nowrap opacity-80 group-hover:opacity-100 transition-opacity">
                         {pixData?.payload}
                       </code>
                     </div>
-                    <button onClick={() => {navigator.clipboard.writeText(pixData.payload); setPixCopied(true); setTimeout(() => setPixCopied(false), 2000);}} className="text-[#C9A84C] p-3 bg-[#C9A84C]/10 rounded-xl hover:bg-[#C9A84C]/20 active:scale-90 transition-all flex-shrink-0">
+                  <button onClick={() => {navigator.clipboard.writeText(pixData.payload); setPixCopied(true); setTimeout(() => setPixCopied(false), 2000);}} className="text-[#C9A84C] p-3 bg-[#C9A84C]/10 rounded-xl hover:bg-[#C9A84C]/20 active:scale-90 transition-all flex-shrink-0">
                       {pixCopied ? <Check size={24} /> : <Copy size={24} />}
                     </button>
                   </div>
@@ -248,7 +304,7 @@ export default function App() {
                   
                   {/* TEXTO DE AVISO DO POLLING */}
                   <div className="flex items-center justify-center gap-2 mt-4 text-[#C9A84C] opacity-70">
-                    <Loader2 className="animate-spin" size={14} />
+                   <Loader2 className="animate-spin" size={14} />
                     <p className="text-[0.65rem] uppercase tracking-widest font-bold">Aguardando confirmação do banco...</p>
                   </div>
                 </div>
@@ -267,7 +323,7 @@ export default function App() {
             <div className="flex items-center gap-3">
                <span className="w-1.5 h-1.5 bg-[#C9A84C] rounded-full animate-pulse shadow-[0_0_8px_#C9A84C]" />
                <div className="text-[#6B7280] text-[0.6rem] tracking-[0.45em] uppercase font-medium">Brasil · RJ</div>
-            </div>
+             </div>
           </nav>
           
           <main className="relative z-10 flex-1 flex flex-col items-center justify-center text-center px-6 max-w-5xl mx-auto pb-20">
@@ -278,30 +334,30 @@ export default function App() {
             
             {/* VERSÍCULO EM GLASSMORPHISM */}
             <div className="glass-card max-w-[850px] mb-20 relative px-10 py-12 md:py-16 rounded-[2.5rem] w-full" style={{ animation: 'float 6s ease-in-out infinite' }}>
-              <span className="absolute -top-12 left-8 md:left-12 text-9xl text-[#C9A84C]/15 font-serif select-none pointer-events-none">“</span>
+               <span className="absolute -top-12 left-8 md:left-12 text-9xl text-[#C9A84C]/15 font-serif select-none pointer-events-none">“</span>
               <p className="italic text-2xl sm:text-4xl text-[#E5E7EB] leading-relaxed font-serif px-4 md:px-8 drop-shadow-md">
                 "Ide por todo o mundo, pregai o evangelho a toda criatura."
               </p>
               <div className="flex items-center justify-center gap-4 mt-10 opacity-80">
-                <div className="w-8 h-px bg-[#C9A84C]" />
+                 <div className="w-8 h-px bg-[#C9A84C]" />
                 <p className="text-[#C9A84C] text-[0.65rem] tracking-[0.5em] uppercase font-bold">Marcos 16:15</p>
                 <div className="w-8 h-px bg-[#C9A84C]" />
               </div>
             </div>
 
             <button onClick={() => setShowInventory(true)} className="hero-cta text-black px-16 py-7 rounded-sm font-bold tracking-[0.25em] uppercase flex items-center gap-4 text-xs shadow-[0_10px_40px_rgba(201,168,76,0.3)]">
-              <Heart size={20} fill="currentColor" /> contribuye a mi misión <ArrowRight size={20} />
+              <Heart size={20} fill="currentColor" /> contribuye a mi missão <ArrowRight size={20} />
             </button>
           </main>
         </div>
       ) : (
         /* LISTA DE ITENS */
         <div className="min-h-screen bg-[#0d0d0d] animate-tab">
-          <nav className="sticky top-0 z-50 bg-[#0D0D0D]/95 backdrop-blur-xl border-b border-[#D4AF37]/15 p-4 md:p-6">
+           <nav className="sticky top-0 z-50 bg-[#0D0D0D]/95 backdrop-blur-xl border-b border-[#D4AF37]/15 p-4 md:p-6">
              <div className="max-w-[1200px] mx-auto flex justify-between items-center">
               <div className="text-[#C9A84C] font-bold tracking-widest text-lg" style={{ fontFamily: 'Playfair Display, serif' }}>E·B</div>
               <button onClick={() => setShowInventory(false)} className="group flex items-center gap-2 text-[#C9A84C] text-[0.65rem] uppercase tracking-widest border border-[#C9A84C]/30 px-6 py-2.5 hover:bg-[#C9A84C]/10 transition-all rounded-sm font-semibold">
-                 <ArrowRight size={14} className="rotate-180 group-hover:-translate-x-1 transition-transform" /> Voltar
+                  <ArrowRight size={14} className="rotate-180 group-hover:-translate-x-1 transition-transform" /> Voltar
               </button>
             </div>
           </nav>
@@ -311,7 +367,7 @@ export default function App() {
               <div className="max-w-md mx-auto mt-14 bg-white/[0.02] border border-white/10 p-8 rounded-3xl text-center shadow-[0_25px_60px_rgba(0,0,0,0.6)]">
                  <div className="flex justify-between items-end mb-5 text-left">
                     <div><p className="text-[0.6rem] uppercase tracking-[0.25em] text-[#6B7280] mb-2 font-medium">Missão em Progresso</p><p className="text-3xl font-bold text-[#C9A84C] tracking-tight">{Math.round(overallProgress)}%</p></div>
-                    <Target className="text-[#C9A84C] mb-1 opacity-60" size={32} />
+                   <Target className="text-[#C9A84C] mb-1 opacity-60" size={32} />
                  </div>
                  <div className="w-full h-2.5 bg-white/5 rounded-full overflow-hidden border border-white/5 shadow-inner">
                     <div className="h-full bg-gradient-to-r from-[#7A5C10] via-[#C9A84C] to-[#FAEFC8] transition-all duration-1000" style={{ width: `${overallProgress}%` }} />
@@ -321,11 +377,11 @@ export default function App() {
             </header>
             <div className="space-y-24">
               {categories.map((category, catIdx) => (
-                <section key={category.title}>
+                 <section key={category.title}>
                   <div className="flex items-center gap-8 mb-12">
                     <h3 className="text-3xl font-serif font-medium text-[#FAFAFA] whitespace-nowrap" style={{ fontFamily: 'Playfair Display, serif' }}>{category.title}</h3>
                     <div className="flex-1 h-px bg-gradient-to-r from-[#D4AF37]/50 via-[#D4AF37]/10 to-transparent" />
-                  </div>
+                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                     {category.items.map((item) => {
                       const isComplete = item.reserved >= item.goal;
@@ -333,41 +389,41 @@ export default function App() {
                       return (
                         <Card key={item.id} onClick={() => !isComplete && handleReserve(catIdx, item.id)} className={`bg-white/[0.03] border-[#D4AF37]/15 hover:border-[#D4AF37]/40 transition-all duration-500 group ${isComplete ? 'opacity-50' : 'cursor-pointer hover:bg-white/[0.07] hover:-translate-y-2'}`}>
                           <CardHeader className="pb-4 text-left">
-                            <div className="flex justify-between items-start gap-4">
+                             <div className="flex justify-between items-start gap-4">
                               <div className="space-y-4">
                                 <CardTitle className="text-[#FAFAFA] text-2xl leading-tight font-medium tracking-tight" style={{ fontFamily: 'Inter, sans-serif' }}>{item.name}</CardTitle>
-                                <div className="flex flex-wrap gap-3">
+                                 <div className="flex flex-wrap gap-3">
                                     <Badge variant="outline" className="bg-[#D4AF37]/15 text-[#FAEFC8] border-[#C9A84C]/40 uppercase text-[0.65rem] font-bold px-4 py-1.5 tracking-widest shadow-sm">R$ {ITEM_PRICES_NUM[item.id]},00</Badge>
-                                    <Badge variant="outline" className="bg-white/5 text-[#9CA3AF] border-white/10 uppercase text-[0.65rem] px-4 py-1.5 tracking-widest">{item.size}</Badge>
+                                     <Badge variant="outline" className="bg-white/5 text-[#9CA3AF] border-white/10 uppercase text-[0.65rem] px-4 py-1.5 tracking-widest">{item.size}</Badge>
                                 </div>
                               </div>
-                              {!isComplete ? (
+                               {!isComplete ? (
                                 <div className="text-center flex-shrink-0 bg-white/5 p-4 rounded-xl border border-white/10 min-w-[85px]">
                                   <span className="block text-[0.55rem] uppercase tracking-[0.25em] text-[#6B7280] mb-1">Faltam</span>
-                                  <span className="text-3xl font-bold text-[#C9A84C] tracking-tighter">{item.goal - item.reserved}</span>
+                                   <span className="text-3xl font-bold text-[#C9A84C] tracking-tighter">{item.goal - item.reserved}</span>
                                 </div>
                               ) : (
-                                <div className="bg-emerald-500/10 text-emerald-500 p-4 rounded-full border border-emerald-500/20 flex-shrink-0 shadow-lg"><Check size={28} strokeWidth={3} /></div>
+                                 <div className="bg-emerald-500/10 text-emerald-500 p-4 rounded-full border border-emerald-500/20 flex-shrink-0 shadow-lg"><Check size={28} strokeWidth={3} /></div>
                               )}
                             </div>
-                          </CardHeader>
+                           </CardHeader>
                           <CardContent className="pt-3 text-left">
                             <p className="text-[#9CA3AF] text-base mb-10 font-light leading-relaxed">{item.description}</p>
-                            <div className="space-y-4 mb-10">
+                             <div className="space-y-4 mb-10">
                               <div className="flex justify-between text-[0.7rem] text-[#6B7280] tracking-[0.25em] uppercase font-bold">
                                 <span>Suprimento: {item.reserved}/{item.goal}</span>
-                                <span className="text-[#D6D3D1]">{Math.round(progress)}%</span>
+                                 <span className="text-[#D6D3D1]">{Math.round(progress)}%</span>
                               </div>
                               <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden border border-white/5 shadow-sm">
-                                <div className="h-full bg-gradient-to-r from-[#7A5C10] via-[#C9A84C] to-[#FAEFC8] transition-all duration-700" style={{ width: `${progress}%` }} />
+                               <div className="h-full bg-gradient-to-r from-[#7A5C10] via-[#C9A84C] to-[#FAEFC8] transition-all duration-700" style={{ width: `${progress}%` }} />
                               </div>
                             </div>
-                            {!isComplete && (
+                             {!isComplete && (
                               <Button className="w-full hero-cta text-black font-bold uppercase text-[0.75rem] tracking-[0.3em] h-14 rounded-sm shadow-xl hover:scale-[1.01]">Contribuir com este Item! <Heart size={18} className="ml-3" fill="currentColor" /></Button>
                             )}
                           </CardContent>
                         </Card>
-                      );
+                       );
                     })}
                   </div>
                 </section>
@@ -384,7 +440,7 @@ export default function App() {
             <DialogHeader className="text-center items-center mb-3">
               <DialogTitle className="text-xl md:text-2xl text-[#FAFAFA] font-serif tracking-tight">{selectedItemData?.name}</DialogTitle>
               <div className="w-10 h-0.5 bg-[#C9A84C]/40 rounded-full mt-1" />
-            </DialogHeader>
+             </DialogHeader>
 
             <div className="flex items-center justify-between w-full max-w-[280px] mt-2 mb-4 px-6 py-2 border border-white/5 rounded-full bg-white/[0.02] shadow-inner">
               <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="text-[#C9A84C] p-2 hover:scale-110 transition-transform"><Minus size={16} /></button>
@@ -395,7 +451,7 @@ export default function App() {
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full flex flex-col items-center">
               <TabsList className="w-full bg-white/[0.03] grid grid-cols-2 mb-6 h-11 rounded-full p-1.5 border border-white/5 shadow-md">
                 <TabsTrigger value="reserva" className="text-[0.6rem] uppercase tracking-[0.2em] rounded-full data-[state=active]:bg-[#C9A84C] data-[state=active]:text-black font-black">Reservar</TabsTrigger>
-                <TabsTrigger value="comprar" className="text-[0.6rem] uppercase tracking-[0.2em] rounded-full data-[state=active]:bg-[#C9A84C] data-[state=active]:text-black font-black">Comprar com pix</TabsTrigger>
+                 <TabsTrigger value="comprar" className="text-[0.6rem] uppercase tracking-[0.2em] rounded-full data-[state=active]:bg-[#C9A84C] data-[state=active]:text-black font-black">Comprar com pix</TabsTrigger>
               </TabsList>
               
               {/* ABA DE RESERVA */}
@@ -405,7 +461,7 @@ export default function App() {
                   <div className="w-full bg-[#C9A84C]/5 border border-[#C9A84C]/20 p-5 rounded-2xl text-left shadow-inner">
                     <div className="flex items-center gap-2 text-[#C9A84C] mb-3">
                       <BookmarkCheck size={18} />
-                      <h4 className="font-bold text-[0.65rem] tracking-[0.2em] uppercase">Regra da Reserva</h4>
+                       <h4 className="font-bold text-[0.65rem] tracking-[0.2em] uppercase">Regra da Reserva</h4>
                     </div>
                     <p className="text-[0.8rem] text-[#D6D3D1] font-light leading-relaxed">
                        Ao reservar <strong className="text-white font-bold">{quantity}x {selectedItemData?.name}</strong>, é de sua responsabilidade <strong className="text-[#C9A84C]">comprar o item fisicamente</strong> e entregá-lo em mãos antes da viagem.
@@ -414,13 +470,13 @@ export default function App() {
 
                   <form onSubmit={handleSubmit} className="w-full space-y-6">
                     <input required value={formData.name} placeholder="SEU NOME" onChange={(e) => setFormData({...formData, name: e.target.value})} className="w-full bg-transparent border-b border-white/10 p-3 text-center text-sm focus:outline-none focus:border-[#C9A84C] transition-all placeholder:text-[#333] font-bold tracking-widest" />
-                    <Button type="submit" className="w-full hero-cta text-black font-bold uppercase text-[0.7rem] tracking-[0.35em] h-14 rounded-sm shadow-2xl">Confirmar Reserva</Button>
+                     <Button type="submit" className="w-full hero-cta text-black font-bold uppercase text-[0.7rem] tracking-[0.35em] h-14 rounded-sm shadow-2xl">Confirmar Reserva</Button>
                   </form>
                 </div>
               </TabsContent>
               
               {/* ABA DE COMPRA */}
-              <TabsContent value="comprar" className="w-full flex flex-col items-center space-y-6 text-center animate-in fade-in zoom-in duration-300">
+               <TabsContent value="comprar" className="w-full flex flex-col items-center space-y-6 text-center animate-in fade-in zoom-in duration-300">
                 <div className="bg-white/[0.02] w-full p-4 md:p-5 rounded-3xl border border-white/5 shadow-inner">
                   <p className="text-[0.55rem] uppercase tracking-[0.5em] text-[#6B7280] mb-1 font-bold">Preço estimado</p>
                   <span className="text-2xl md:text-3xl font-bold text-[#C9A84C] tracking-tighter">R$ {(selectedItem ? ITEM_PRICES_NUM[selectedItem.itemId] * quantity : 0).toFixed(2)}</span>
@@ -436,7 +492,7 @@ export default function App() {
       </Dialog>
       
       {/* MODAL DO MAPA DA MISSÃO COM A IMAGEM MISION.JPEG */}
-      <Dialog open={showMapModal} onOpenChange={setShowMapModal}>
+       <Dialog open={showMapModal} onOpenChange={setShowMapModal}>
         <DialogContent className="bg-[#0f0f0f] border-[#D4AF37]/40 text-white max-w-lg w-[95vw] p-6 md:p-8 rounded-3xl shadow-[0_0_120px_rgba(0,0,0,0.85)] backdrop-blur-3xl max-h-[92vh] overflow-y-auto no-scrollbar selection:bg-[#C9A84C] selection:text-black">
           <DialogHeader className="text-center items-center mb-6">
             <DialogTitle className="text-3xl mb-3 text-[#FAFAFA] font-serif tracking-tight" style={{ fontFamily: 'Playfair Display, serif' }}>Mapa da Missão</DialogTitle>
@@ -448,7 +504,7 @@ export default function App() {
           
           <div className="bg-white/5 rounded-3xl p-4 flex flex-col items-center gap-4 shadow-inner border border-white/5 mt-4">
              {/* CAIXA COM A IMAGEM DO MAPA MISION.JPEG */}
-             <div className="w-full h-72 md:h-80 bg-[#1a1a1a] rounded-2xl flex items-center justify-center border border-[#D4AF37]/10 overflow-hidden group">
+              <div className="w-full h-72 md:h-80 bg-[#1a1a1a] rounded-2xl flex items-center justify-center border border-[#D4AF37]/10 overflow-hidden group">
                <img 
                   src="/mision.jpeg" 
                   alt="Mapa da Missão" 
