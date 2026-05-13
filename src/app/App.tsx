@@ -204,7 +204,7 @@ export default function App() {
       if (estoqueCarregado) return;
       const { data: doacoes, error } = await supabase.from('doacoes_confirmadas').select('*').order('id', { ascending: false });
       if (doacoes && !error) {
-        setUltimasDoacoes(doacoes.slice(0, 10)); 
+        setUltimasDoacoes(doacoes); 
         setCategories((prevCategories) => prevCategories.map((category) => ({
             ...category,
             items: category.items.map((item) => {
