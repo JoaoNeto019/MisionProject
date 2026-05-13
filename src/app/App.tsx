@@ -406,7 +406,7 @@ export default function App() {
 
             <div className="flex flex-col items-center w-full max-w-[850px] mb-20 relative px-10">
               <button onClick={() => setShowInventory(true)} className="hero-cta text-black px-16 py-7 rounded-sm font-bold tracking-[0.25em] uppercase flex items-center gap-4 text-xs shadow-2xl transition-all mb-10">
-                <Heart size={20} fill="currentColor" /> Contribuye a mi missão <ArrowRight size={20} />
+                <Heart size={20} fill="currentColor" /> Contribuye a mi mísion <ArrowRight size={20} />
               </button>
 
               {/* VERSÍCULO SEM CAIXA */}
@@ -440,7 +440,7 @@ export default function App() {
                 <div key={donationIndex} className="animate-pop bg-transparent px-8 py-3 rounded-full flex flex-col items-center gap-1 border border-[#C9A84C]/30 shadow-none">
                   <div className="flex items-center gap-4">
                     <Users size={18} className="text-[#C9A84C]" />
-                    <span className="text-[0.75rem] uppercase tracking-[0.2em] text-[#D4AF37] font-bold">🙏 {ultimasDoacoes[donationIndex]?.nome_pessoa} doou {ultimasDoacoes[donationIndex]?.item_nome}!</span>
+                    <span className="text-[0.75rem] uppercase tracking-[0.2em] text-[#D4AF37] font-bold">🙏 {ultimasDoacoes[donationIndex]?.nome_pessoa} Ajudou com {ultimasDoacoes[donationIndex]?.item_nome}!</span>
                   </div>
                   {ultimasDoacoes[donationIndex]?.mensagem && (
                     <p className="text-[0.6rem] italic text-[#FAFAFA]/60 font-serif max-w-[250px] truncate">"{ultimasDoacoes[donationIndex].mensagem}"</p>
