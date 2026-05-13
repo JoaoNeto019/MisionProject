@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "./components/ui/tabs";
 
 // ─── CONFIGURAÇÕES SUPABASE ──────────────────────────────────────────────────
-const SUPABASE_URL = "https://tjctrkbdvpuknabkcqzz.supabase.co"; 
+const SUPABASE_URL = "https://tjctrkbdvpuknabkcqzz.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRqY3Rya2JkdnB1a25hYmtjcXp6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1MjYxMzAsImV4cCI6MjA5NDEwMjEzMH0.sOwa-EqusgChAuA_rm2h5qnta7zEexk3P3qs5CzlABk";
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -20,7 +20,7 @@ const ITEM_PRICES_NUM: Record<string, number> = {
   "1": 910, "2": 85, "3": 85, "4": 30, "5": 190, "6": 360, "7": 45, "8": 15, "9": 250, "10": 45,
   "11a": 120, "11": 95, "12": 150, "13a": 35, "13b": 35, "13c": 35, "14": 25, 
   "15": 195, "15b": 150, "16a": 80, "16b": 120, "16c": 90, "16d": 50, "17": 35, "18": 42, "19": 200,
-  "20": 40, "21": 60, "22": 70, "23": 65
+  "20": 40, "21": 60, "22": 70, "23": 65, "99": 5
 };
 
 interface Item { id: string; name: string; description: string; goal: number; reserved: number; size: string; }
@@ -36,7 +36,6 @@ export default function App() {
   const [selectedItem, setSelectedItem] = useState<{ categoryIndex: number; itemId: string; } | null>(null);
   const [formData, setFormData] = useState({ name: "", email: "", phone: "" });
   const [showMapModal, setShowMapModal] = useState(false);
-  
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [pixData, setPixData] = useState<any>(null);
 
@@ -45,7 +44,7 @@ export default function App() {
     {
       title: " Traje Missionário",
       items: [
-        { id: "1", name: "Terno Padrão", description: "Corte clássico para o dia a dia.", goal: 2, reserved: 1, size: "Tam: Consultar" }, // Hana Carolina
+        { id: "1", name: "Terno Padrão", description: "Corte clássico para o dia a dia.", goal: 2, reserved: 1, size: "Tam: Consultar" },
         { id: "2", name: "Camisa Branca (Curta)", description: "Tecido leve e respirável.", goal: 4, reserved: 0, size: "Tam: 5" },
         { id: "3", name: "Camisa Branca (Longa)", description: "Padrão para uso formal.", goal: 5, reserved: 0, size: "Tam: 5" },
         { id: "4", name: "Gravata", description: "Padrão conservador.", goal: 3, reserved: 0, size: "Padrão" },
@@ -54,13 +53,13 @@ export default function App() {
         { id: "7", name: "Cinto Social", description: "Material resistente.", goal: 2, reserved: 0, size: "Padrão" },
         { id: "8", name: "Meia Social", description: "Cano longo (preço por par).", goal: 7, reserved: 0, size: "Tam: 43" },
         { id: "9", name: "Terno Oficiante", description: "Camisa Social Branca, Calça Social Branca, Meias Brancas, Cinto Braco e Gravata Branca", goal: 1, reserved: 0, size: "Tam: Consultar" },
-        { id: "10", name: "Palmilha Gel", description: "Para conforto nas caminhadas.", goal: 2, reserved: 2, size: "Tam: 43" }, // Já comprado
+        { id: "10", name: "Palmilha Gel", description: "Para conforto nas caminhadas.", goal: 2, reserved: 2, size: "Tam: 43" },
       ],
     },
     {
       title: "❄️ Kit Inverno Uruguai",
       items: [
-        { id: "11a", name: "Segunda Pele / Térmica", description: "Conjunto para frio extremo.", goal: 2, reserved: 2, size: "Tam: G" }, // Já comprado
+        { id: "11a", name: "Segunda Pele / Térmica", description: "Conjunto para frio extremo.", goal: 2, reserved: 2, size: "Tam: G" },
         { id: "11", name: "Casaco Leve", description: "Para o frio moderado.", goal: 3, reserved: 1, size: "Tam: GG" },
         { id: "12", name: "Casaco Pesado", description: "Estilo Anorak com forro grosso.", goal: 1, reserved: 0, size: "Tam: GG" },
         { id: "13a", name: "Luvas", description: "Proteção corta-vento.", goal: 1, reserved: 0, size: "Único" },
@@ -73,11 +72,11 @@ export default function App() {
       title: " Informal e Casa",
       items: [
         { id: "15", name: "Mala de Viagem (23kg)", description: "Material resistente para a viagem.", goal: 2, reserved: 1, size: "23kg" },
-        { id: "15b", name: "Mala de Bordo (10kg)", description: "Mala de mão.", goal: 1, reserved: 1, size: "10kg" }, // Já comprado
-        { id: "16a", name: "Roupas de Exercício", description: "Bermudas e camisetas leves.", goal: 2, reserved: 2, size: "Tam: G" }, // Já comprado
-        { id: "16b", name: "Calça Jeans/Sarja", description: "Dia de preparação/serviço pesado.", goal: 1, reserved: 1, size: "Tam: 42" }, // Já comprado
-        { id: "16c", name: "Pijamas", description: "Um de verão e um de inverno.", goal: 2, reserved: 2, size: "Tam: G" }, // Já comprado
-        { id: "16d", name: "Chinelo Havaianas", description: "Havaianas de lei.", goal: 1, reserved: 1, size: "Tam: 43" }, // Já comprado
+        { id: "15b", name: "Mala de Bordo (10kg)", description: "Mala de mão.", goal: 1, reserved: 1, size: "10kg" },
+        { id: "16a", name: "Roupas de Exercício", description: "Bermudas e camisetas leves.", goal: 2, reserved: 2, size: "Tam: G" },
+        { id: "16b", name: "Calça Jeans/Sarja", description: "Dia de preparação/serviço pesado.", goal: 1, reserved: 1, size: "Tam: 42" },
+        { id: "16c", name: "Pijamas", description: "Um de verão e um de inverno.", goal: 2, reserved: 2, size: "Tam: G" },
+        { id: "16d", name: "Chinelo Havaianas", description: "Havaianas de lei.", goal: 1, reserved: 1, size: "Tam: 43" },
         { id: "17", name: "Roupa de Cama", description: "Jogo completo com lençol e fronha.", goal: 2, reserved: 1, size: "Solteiro" },
         { id: "18", name: "Toalha de Banho", description: "Tecido de alta absorção.", goal: 2, reserved: 0, size: "Padrão" },
         { id: "19", name: "Tênis Esportivo", description: "Confortável para exercício.", goal: 1, reserved: 0, size: "Tam: 43" },
@@ -86,10 +85,16 @@ export default function App() {
     {
       title: " Higiene e Saúde",
       items: [
-        { id: "20", name: "Kit Banho", description: "Shampoo, desodorante, sabonete (Básico CTM).", goal: 1, reserved: 1, size: "Básico" }, // Já comprado
-        { id: "21", name: "Barbeador", description: "Aparelho de qualidade e estoque de lâminas.", goal: 1, reserved: 1, size: "Padrão" }, // Já comprado
+        { id: "20", name: "Kit Banho", description: "Shampoo, desodorante, sabonete (Básico CTM).", goal: 1, reserved: 1, size: "Básico" },
+        { id: "21", name: "Barbeador", description: "Aparelho de qualidade e estoque de lâminas.", goal: 1, reserved: 1, size: "Padrão" },
         { id: "22", name: "Remédios Básicos", description: "Analgésicos, antitérmicos, estômago e band-aid.", goal: 1, reserved: 0, size: "Kit" },
         { id: "23", name: "Protetor Solar", description: "Item obrigatório para o verão uruguaio.", goal: 1, reserved: 0, size: "Padrão" },
+      ]
+    },
+    {
+      title: "🛠️ Área de Testes",
+      items: [
+        { id: "99", name: "Item de Teste PIX", description: "Item de R$ 1,00 para validação do sistema PIX.", goal: 1, reserved: 0, size: "Teste" },
       ]
     }
   ]);
@@ -252,7 +257,7 @@ export default function App() {
              <div className="max-w-[1200px] mx-auto flex justify-between items-center">
               <div className="text-[#C9A84C] font-bold tracking-widest text-lg" style={{ fontFamily: 'Playfair Display, serif' }}>E·B</div>
               <button onClick={() => setShowInventory(false)} className="group flex items-center gap-2 text-[#C9A84C] text-[0.65rem] uppercase tracking-widest border border-[#C9A84C]/30 px-6 py-2.5 hover:bg-[#C9A84C]/10 transition-all rounded-sm font-semibold">
-                <ArrowRight size={14} className="rotate-180 group-hover:-translate-x-1 transition-transform" /> Voltar
+                 <ArrowRight size={14} className="rotate-180 group-hover:-translate-x-1 transition-transform" /> Voltar
               </button>
             </div>
           </nav>
@@ -284,7 +289,7 @@ export default function App() {
                       return (
                         <Card key={item.id} onClick={() => !isComplete && handleReserve(catIdx, item.id)} className={`bg-white/[0.03] border-[#D4AF37]/15 hover:border-[#D4AF37]/40 transition-all duration-500 group ${isComplete ? 'opacity-50' : 'cursor-pointer hover:bg-white/[0.07] hover:-translate-y-2'}`}>
                           <CardHeader className="pb-4 text-left">
-                             <div className="flex justify-between items-start gap-4">
+                            <div className="flex justify-between items-start gap-4">
                               <div className="space-y-4">
                                 <CardTitle className="text-[#FAFAFA] text-2xl leading-tight font-medium tracking-tight" style={{ fontFamily: 'Inter, sans-serif' }}>{item.name}</CardTitle>
                                 <div className="flex flex-wrap gap-3">
@@ -310,7 +315,7 @@ export default function App() {
                                 <span className="text-[#D6D3D1]">{Math.round(progress)}%</span>
                               </div>
                               <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden border border-white/5 shadow-sm">
-                                 <div className="h-full bg-gradient-to-r from-[#7A5C10] via-[#C9A84C] to-[#FAEFC8] transition-all duration-700" style={{ width: `${progress}%` }} />
+                                <div className="h-full bg-gradient-to-r from-[#7A5C10] via-[#C9A84C] to-[#FAEFC8] transition-all duration-700" style={{ width: `${progress}%` }} />
                               </div>
                             </div>
                             {!isComplete && (
@@ -360,7 +365,7 @@ export default function App() {
                       <h4 className="font-bold text-[0.65rem] tracking-[0.2em] uppercase">Regra da Reserva</h4>
                     </div>
                     <p className="text-[0.8rem] text-[#D6D3D1] font-light leading-relaxed">
-                      Ao reservar <strong className="text-white font-bold">{quantity}x {selectedItemData?.name}</strong>, é de sua responsabilidade <strong className="text-[#C9A84C]">comprar o item fisicamente</strong> e entregá-lo em mãos antes da viagem.
+                       Ao reservar <strong className="text-white font-bold">{quantity}x {selectedItemData?.name}</strong>, é de sua responsabilidade <strong className="text-[#C9A84C]">comprar o item fisicamente</strong> e entregá-lo em mãos antes da viagem.
                     </p>
                   </div>
 
