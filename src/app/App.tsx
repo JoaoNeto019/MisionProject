@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
-import { Heart, ArrowRight, MapPin, Copy, Check, MessageCircle, ShoppingCart, BookmarkCheck, ChevronDown, Plus, Minus, Target, Loader2, Info, Timer, Users, CloudSnow, Trophy, Plane, Briefcase } from "lucide-react";
+import { Heart, ArrowRight, MapPin, Copy, Check, MessageCircle, ShoppingCart, BookmarkCheck, ChevronDown, Plus, Minus, Target, Loader2, Info, Timer, Users, CloudSnow, Trophy, Plane, Briefcase, Share2, Sparkles } from "lucide-react";
 import { Button } from "./components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./components/ui/card";
 import { Badge } from "./components/ui/badge";
@@ -22,6 +22,39 @@ const ITEM_PRICES_NUM: Record<string, number> = {
   "20": 40, "21": 60, "22": 70, "23": 65, "99": 5
 };
 
+const CURIOSIDADES_SALTO = [
+  "Salto é a segunda maior cidade do Uruguai! 🇺🇾",
+  "A cidade é famosa mundialmente por suas águas termais curativas. ♨️",
+  "Luis Suárez e Edinson Cavani nasceram aqui! ⚽",
+  "A Represa de Salto Grande é uma das maiores do continente.",
+  "Salto é conhecida como a 'Capital do Citrus' do país. 🍊",
+  "O Rio Uruguai in Salto oferece um dos pores do sol mais lindos. 🌅",
+  "A arquitetura local preserva casarões históricos do século XIX.",
+  "No inverno, as geadas são comuns e o frio é intenso! ❄️",
+  "O Teatro Larrañaga é um ícone de luxo e cultura uruguaia.",
+  "A 'Costanera' é o ponto de encontro oficial para o Mate.",
+  "O nome 'Salto' vem das antigas quedas d'água do rio.",
+  "A cidade fica de frente para a Argentina (Concordia).",
+  "O Uruguai foi pioneiro na liberdade de culto na região.",
+  "A pecuária é o motor econômico das estâncias vizinhas.",
+  "A hospitalidade salteña é famosa por ser muito acolhedora.",
+  "Muitos missionários amam Salto pela receptividade do povo.",
+  "O Doce de Leite uruguaio é patrimônio em cada esquina! 🥛",
+  "A Ponte Internacional Salto Grande une dois países.",
+  "Salto tem uma forte vida universitária e jovem.",
+  "O churrasco (Asado) é uma tradição sagrada aos domingos.",
+  "A Catedral de San Juan Bautista é um marco da fé local.",
+  "Salto abriga o maior parque aquático termal da América do Sul.",
+  "O clima úmido faz a vegetação ser sempre muito verde.",
+  "A cidade tem museus que contam a história da independência.",
+  "O comércio local é vibrante e cheio de tradição gaúcha.",
+  "Salto é o destino perfeito para quem busca paz e natureza.",
+  "A cidade é um hub cultural importante do Norte uruguaio.",
+  "Missionários em Salto caminham muito pelas 'calles' largas.",
+  "O sotaque uruguaio aqui tem uma melodia única.",
+  "Salto é um lugar onde a história e o futuro se encontram."
+];
+
 interface Item { id: string; name: string; description: string; goal: number; reserved: number; size: string; }
 interface Category { title: string; items: Item[]; }
 
@@ -39,13 +72,14 @@ export default function App() {
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [pixData, setPixData] = useState<any>(null);
   const [estoqueCarregado, setEstoqueCarregado] = useState(false);
+  const [reservationSuccess, setReservationSuccess] = useState(false);
   
   const [ultimasDoacoes, setUltimasDoacoes] = useState<any[]>([]);
   const [donationIndex, setDonationIndex] = useState(0);
+  const [curiosityIndex, setCuriosityIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState({ d: 0, h: 0, m: 0 });
   const [tempSalto, setTempSalto] = useState<number | null>(null);
 
-  // AJUSTE TÉCNICO: Scroll para o topo ao abrir abas
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [showInventory, showPixScreen]);
@@ -71,7 +105,7 @@ export default function App() {
       items: [
         { id: "11a", name: "Segunda Pele / Térmica", description: "Conjunto para frio extremo.", goal: 2, reserved: 2, size: "Tam: G" },
         { id: "11", name: "Casaco Leve", description: "Para o frio moderado.", goal: 3, reserved: 1, size: "Tam: GG" },
-        { id: "12", name: "Casaco Pesado", description: "Estilo Anorak com forro grosso.", goal: 1, reserved: 0, size: "Tam: GG" },
+        { id: "12", name: "Casaco Pesado", description: "Estilo Anorak with forro grosso.", goal: 1, reserved: 0, size: "Tam: GG" },
         { id: "13a", name: "Luvas", description: "Proteção corta-vento.", goal: 1, reserved: 0, size: "Único" },
         { id: "13b", name: "Cachecol", description: "Conforto para o pescoço.", goal: 1, reserved: 0, size: "Único" },
         { id: "13c", name: "Gorro", description: "Proteção térmica.", goal: 1, reserved: 0, size: "Único" },
@@ -127,6 +161,13 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    const interval = setInterval(() => {
+      setCuriosityIndex((prev) => (prev + 1) % CURIOSIDADES_SALTO.length);
+    }, 8000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
     if (ultimasDoacoes.length > 1) {
       const cycle = setInterval(() => {
         setDonationIndex((prev) => (prev + 1) % ultimasDoacoes.length);
@@ -146,8 +187,14 @@ export default function App() {
     setSelectedItem({ categoryIndex, itemId });
     setQuantity(1);
     setPixData(null);
+    setReservationSuccess(false);
     setActiveTab("reserva");
     setShowModal(true);
+  };
+
+  const handleRecrutarReforcos = () => {
+    const msg = encodeURIComponent(`Fala pessoal! Estou apoiando a missão do Elder Barbarini no Uruguai 🇺🇾. Ele já conseguiu ${Math.round(overallProgress)}% dos suprimentos! Falta pouco, ajude você também: https://mision-project.vercel.app`);
+    window.open(`https://wa.me/?text=${msg}`, "_blank");
   };
 
   const handleAsaasPayment = async () => {
@@ -242,7 +289,7 @@ export default function App() {
       setCategories((prev) => prev.map((category, idx) => idx === selectedItem.categoryIndex ? { ...category, items: category.items.map((item) => item.id === selectedItem.itemId ? { ...item, reserved: Math.min(item.reserved + quantity, item.goal) } : item ), } : category ));
       const msg = encodeURIComponent(`📋 *Nova Reserva — Elder Barbarini*\n🛍️ *Item:* ${quantity}x ${selectedItemData?.name}\n👤 *Nome:* ${formData.name}\n💬 *Mensagem:* ${formData.mensagem}\n\nEstou ciente que devo comprar e entregar este item! ✅`);
       window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${msg}`, "_blank");
-      setShowModal(false);
+      setReservationSuccess(true);
     }
   };
 
@@ -255,11 +302,15 @@ export default function App() {
         @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
         @keyframes popIn { 0% { transform: scale(0.8); opacity: 0; } 10% { transform: scale(1.05); opacity: 1; } 15% { transform: scale(1); } 85% { transform: scale(1); opacity: 1; } 100% { transform: scale(0.9); opacity: 0; } }
         @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+        @keyframes slideCuriosity { 0% { transform: translateY(20px); opacity: 0; } 10% { transform: translateY(0); opacity: 1; } 90% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-20px); opacity: 0; } }
+        @keyframes borderPulse { 0% { border-color: rgba(201, 168, 76, 0.3); } 50% { border-color: rgba(201, 168, 76, 1); } 100% { border-color: rgba(201, 168, 76, 0.3); } }
         .hero-headline { font-family: 'Playfair Display', serif; background: linear-gradient(110deg, #C9A84C, #FAEFC8, #C9A84C, #FAEFC8, #C9A84C); background-size: 250% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: goldShimmer 12s ease infinite; }
         .hero-cta { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #7A5C10 0%, #D4AF37 45%, #FAEFC8 50%, #D4AF37 55%, #9A7520 100%); background-size: 200% auto; transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1); }
         .hero-cta:hover { background-position: right center; transform: translateY(-3px); box-shadow: 0 15px 45px rgba(212, 175, 55, 0.4); }
         .animate-tab { animation: fadeInScale 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         .animate-pop { animation: popIn 4s ease-in-out infinite; }
+        .animate-curiosity { animation: slideCuriosity 8s ease-in-out infinite; }
+        .location-pill { animation: borderPulse 3s infinite; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         .glass-card { background: rgba(20, 20, 20, 0.4); border: 1px solid rgba(212, 175, 55, 0.15); backdrop-filter: blur(12px); box-shadow: 0 30px 60px rgba(0,0,0,0.4); }
@@ -268,7 +319,7 @@ export default function App() {
 
       {showPixScreen ? (
         <div className="min-h-screen bg-[#0d0d0d] flex flex-col animate-tab">
-          <nav className="sticky top-0 z-50 bg-[#0D0D0D]/95 backdrop-blur-xl border-b border-[#D4AF37]/15 p-4 md:p-6">
+          <nav className="sticky top-0 z-50 bg-[#0D0D0D]/95 backdrop-blur-xl border-b border-[#D4AF37]/15 p-4 md:p-6 transition-all">
              <div className="max-w-[1200px] mx-auto flex justify-between items-center">
               <div className="text-[#C9A84C] font-bold tracking-widest text-lg" style={{ fontFamily: 'Playfair Display, serif' }}>E·B</div>
               <button onClick={() => {setShowPixScreen(false); setIsPaid(false);}} className="group flex items-center gap-2 text-[#C9A84C] text-[0.65rem] uppercase tracking-widest border border-[#C9A84C]/30 px-6 py-2.5 hover:bg-[#C9A84C]/10 rounded-sm font-semibold transition-all">
@@ -283,7 +334,8 @@ export default function App() {
                 <div className="w-24 h-24 bg-[#25D366]/20 text-[#25D366] rounded-full flex items-center justify-center mx-auto border-4 border-[#25D366]/30 shadow-[0_0_60px_rgba(37,211,102,0.3)]"><Check size={48} strokeWidth={3} /></div>
                 <h2 className="text-4xl font-serif text-[#FAFAFA]" style={{ fontFamily: 'Playfair Display, serif' }}>Pagamento Confirmado!</h2>
                 <p className="text-[#9CA3AF] text-lg">Obrigado por sua doação!</p>
-                <Button onClick={() => {setShowPixScreen(false); setIsPaid(false);}} className="w-full hero-cta text-black font-bold uppercase tracking-[0.2em] h-14 mt-6">Voltar para a Lista</Button>
+                <Button onClick={handleRecrutarReforcos} className="w-full bg-[#C9A84C] hover:bg-[#FAEFC8] text-black font-bold uppercase tracking-[0.1em] h-14 mt-4 flex items-center justify-center gap-3 transition-all"><Share2 size={20} /> Recrutar Reforços</Button>
+                <Button onClick={() => {setShowPixScreen(false); setIsPaid(false);}} className="w-full border border-white/10 text-white font-bold uppercase tracking-[0.2em] h-14 mt-2 transition-all">Voltar para a Lista</Button>
               </div>
             ) : (
               <>
@@ -302,14 +354,11 @@ export default function App() {
                     <div className="flex-1 overflow-x-auto no-scrollbar text-left mr-4"><code className="text-[#C9A84C] text-sm tracking-tight font-mono whitespace-nowrap opacity-80 group-hover:opacity-100 transition-opacity">{pixData?.payload}</code></div>
                     <button onClick={() => {navigator.clipboard.writeText(pixData.payload); setPixCopied(true); setTimeout(() => setPixCopied(false), 2000);}} className="text-[#C9A84C] p-3 bg-[#C9A84C]/10 rounded-xl hover:bg-[#C9A84C]/20 active:scale-90 transition-all flex-shrink-0">{pixCopied ? <Check size={24} /> : <Copy size={24} />}</button>
                   </div>
-
-                  {/* AJUSTE TÉCNICO: Mensagem acima do botão */}
                   <div className="flex items-center justify-center gap-2 mb-4 text-[#C9A84C] opacity-70 animate-pulse">
                     <Loader2 className="animate-spin" size={14} />
                     <p className="text-[0.65rem] uppercase tracking-widest font-bold">Aguardando confirmação do banco...</p>
                   </div>
-
-                  <Button onClick={handleSendWhatsApp} className="w-full bg-[#25D366] hover:bg-[#1da851] text-white font-bold text-[0.8rem] tracking-[0.3em] h-16 uppercase flex items-center justify-center gap-3 rounded-xl shadow-2xl transition-all shadow-[#25D366]/20">
+                  <Button onClick={handleSendWhatsApp} className="w-full bg-[#25D366] hover:bg-[#1da851] text-white font-bold text-[0.8rem] tracking-[0.3em] h-16 uppercase flex items-center justify-center gap-3 rounded-xl shadow-2xl transition-all shadow-[#25D366]/20 transition-all">
                     <MessageCircle size={24} /> Já paguei! Enviar Comprovante
                   </Button>
                 </div>
@@ -331,23 +380,47 @@ export default function App() {
           </nav>
           
           <main className="relative z-10 flex-1 flex flex-col items-center justify-center text-center px-6 max-w-5xl mx-auto pb-20">
-            <h1 className="hero-headline text-6xl sm:text-9xl font-bold mb-4 leading-tight tracking-tight drop-shadow-lg">Elder Barbarini</h1>
-            <div className="flex gap-4 mb-8 text-[#C9A84C] font-mono text-sm tracking-widest uppercase">
+            <h1 className="hero-headline text-6xl sm:text-9xl font-bold mb-8 leading-tight tracking-tight drop-shadow-lg">Elder Barbarini</h1>
+            
+            {/* LOCALIZAÇÃO NO TOPO E CLICÁVEL */}
+            <button onClick={() => setShowMapModal(true)} className="location-pill flex items-center gap-3 bg-white/5 border border-[#C9A84C]/30 px-8 py-3.5 rounded-full mb-10 hover:bg-[#C9A84C]/10 transition-all active:scale-95 group shadow-[0_0_20px_rgba(201,168,76,0.1)] transition-all">
+              <MapPin size={18} className="text-[#C9A84C] group-hover:animate-bounce" strokeWidth={2} />
+              <span className="text-[0.7rem] tracking-[0.5em] uppercase font-bold text-[#FAFAFA]">Missão Uruguay · Salto</span>
+            </button>
+
+            <div className="flex gap-4 mb-10 text-[#C9A84C] font-mono text-sm tracking-widest uppercase">
               <div className="flex flex-col items-center"><span className="text-2xl font-bold">{timeLeft.d}</span><span>Dias</span></div>
               <div className="flex flex-col items-center"><span className="text-2xl font-bold">{timeLeft.h}</span><span>Horas</span></div>
               <div className="flex flex-col items-center"><span className="text-2xl font-bold">{timeLeft.m}</span><span>Min</span></div>
             </div>
-            <button onClick={() => setShowMapModal(true)} className="flex items-center justify-center gap-2 text-[#D6D3D1] tracking-[0.6em] uppercase text-[0.7rem] mb-16 font-light hover:text-white transition-colors group">
-              <MapPin size={16} className="text-[#C9A84C] group-hover:scale-110 transition-transform" strokeWidth={1.5} /> Missão Uruguay · Salto - 05 de Agosto
-            </button>
-            <div className="glass-card max-w-[850px] mb-20 relative px-10 py-12 md:py-16 rounded-[2.5rem] w-full" style={{ animation: 'float 6s ease-in-out infinite' }}>
-              <span className="absolute -top-12 left-8 md:left-12 text-9xl text-[#C9A84C]/15 font-serif select-none pointer-events-none">“</span>
-              <p className="italic text-2xl sm:text-4xl text-[#E5E7EB] leading-relaxed font-serif px-4 md:px-8 drop-shadow-md">"Ide por todo o mundo, pregai o evangelho a toda criatura."</p>
-              <div className="flex items-center justify-center gap-4 mt-10 opacity-80"><div className="w-8 h-px bg-[#C9A84C]" /><p className="text-[#C9A84C] text-[0.65rem] tracking-[0.5em] uppercase font-bold">Marcos 16:15</p><div className="w-8 h-px bg-[#C9A84C]" /></div>
+
+            {/* CURIOSIDADES EMBAIXO DO COUNTDOWN */}
+            <div className="glass-card bg-black/40 px-6 py-5 rounded-2xl mb-12 border border-[#D4AF37]/10 max-w-[450px] w-full h-[110px] flex flex-col items-center justify-center overflow-hidden shadow-inner transition-all">
+               <div className="flex items-center gap-2 mb-2.5 text-[#D4AF37] opacity-60">
+                 <span className="text-[0.55rem] uppercase tracking-[0.4em] font-black">Fatos de Salto</span>
+               </div>
+               <div key={curiosityIndex} className="animate-curiosity text-[0.8rem] text-[#E5E7EB] font-light leading-snug px-2">
+                  {CURIOSIDADES_SALTO[curiosityIndex]}
+               </div>
             </div>
-            <button onClick={() => setShowInventory(true)} className="hero-cta text-black px-16 py-7 rounded-sm font-bold tracking-[0.25em] uppercase flex items-center gap-4 text-xs shadow-2xl">
-              <Heart size={20} fill="currentColor" /> Contribuye a mi misión <ArrowRight size={20} />
-            </button>
+
+            <div className="flex flex-col items-center w-full max-w-[850px] mb-20 relative px-10">
+              <button onClick={() => setShowInventory(true)} className="hero-cta text-black px-16 py-7 rounded-sm font-bold tracking-[0.25em] uppercase flex items-center gap-4 text-xs shadow-2xl transition-all mb-10">
+                <Heart size={20} fill="currentColor" /> Contribuye a mi missão <ArrowRight size={20} />
+              </button>
+
+              {/* VERSÍCULO SEM CAIXA */}
+              <div className="text-center space-y-2 opacity-80 animate-in fade-in duration-1000">
+                <p className="italic text-xl sm:text-2xl text-[#E5E7EB] leading-relaxed font-serif px-4">
+                  "Ide por todo o mundo, pregai o evangelho a toda criatura."
+                </p>
+                <div className="flex items-center justify-center gap-4">
+                   <div className="w-6 h-px bg-[#C9A84C]/40" />
+                   <p className="text-[#C9A84C] text-[0.6rem] tracking-[0.4em] uppercase font-bold">Marcos 16:15</p>
+                   <div className="w-6 h-px bg-[#C9A84C]/40" />
+                </div>
+              </div>
+            </div>
           </main>
         </div>
       ) : (
@@ -355,7 +428,7 @@ export default function App() {
            <nav className="sticky top-0 z-50 bg-[#0D0D0D]/95 backdrop-blur-xl border-b border-[#D4AF37]/15 p-4 md:p-6 transition-all">
              <div className="max-w-[1200px] mx-auto flex justify-between items-center">
               <div className="text-[#C9A84C] font-bold tracking-widest text-lg" style={{ fontFamily: 'Playfair Display, serif' }}>E·B</div>
-              <button onClick={() => setShowInventory(false)} className="group flex items-center gap-2 text-[#C9A84C] text-[0.65rem] uppercase tracking-widest border border-[#C9A84C]/30 px-6 py-2.5 hover:bg-[#C9A84C]/10 rounded-sm font-semibold transition-all">
+              <button onClick={() => setShowInventory(false)} className="group flex items-center gap-2 text-[#C9A84C] text-[0.65rem] uppercase tracking-widest border border-[#C9A84C]/30 px-6 py-2.5 hover:bg-[#C9A84C]/10 rounded-sm font-semibold transition-all transition-all">
                 <ArrowRight size={14} className="rotate-180 group-hover:-translate-x-1" /> Voltar
               </button>
             </div>
@@ -413,17 +486,17 @@ export default function App() {
                                   {isCritical && !isComplete && <Badge className="bg-red-500/20 text-red-500 border-red-500/50 text-[0.6rem] animate-pulse">URGENTE</Badge>}
                                 </div>
                                 <div className="flex flex-wrap gap-3">
-                                    <Badge variant="outline" className="bg-[#D4AF37]/15 text-[#FAEFC8] border-[#C9A84C]/40 uppercase text-[0.65rem] font-bold px-4 py-1.5 tracking-widest shadow-sm">R$ {ITEM_PRICES_NUM[item.id]},00</Badge>
-                                    <Badge variant="outline" className="bg-white/5 text-[#9CA3AF] border-white/10 uppercase text-[0.65rem] px-4 py-1.5 tracking-widest">{item.size}</Badge>
+                                    <Badge variant="outline" className="bg-[#D4AF37]/15 text-[#FAEFC8] border-[#C9A84C]/40 uppercase text-[0.65rem] font-bold px-4 py-1.5 tracking-widest shadow-sm transition-all">R$ {ITEM_PRICES_NUM[item.id]},00</Badge>
+                                    <Badge variant="outline" className="bg-white/5 text-[#9CA3AF] border-white/10 uppercase text-[0.65rem] px-4 py-1.5 tracking-widest transition-all">{item.size}</Badge>
                                 </div>
                               </div>
-                              {!isComplete ? <div className="text-center flex-shrink-0 bg-white/5 p-4 rounded-xl border border-white/10 min-w-[85px]"><span className="block text-[0.55rem] uppercase tracking-[0.25em] text-[#6B7280] mb-1">Faltam</span><span className="text-3xl font-bold text-[#C9A84C] tracking-tighter">{item.goal - item.reserved}</span></div> : <div className="bg-emerald-500/10 text-emerald-500 p-4 rounded-full border border-emerald-500/20 flex-shrink-0 shadow-lg transition-transform hover:scale-105"><Check size={28} strokeWidth={3} /></div>}
+                              {!isComplete ? <div className="text-center flex-shrink-0 bg-white/5 p-4 rounded-xl border border-white/10 min-w-[85px]"><span className="block text-[0.55rem] uppercase tracking-[0.25em] text-[#6B7280] mb-1 transition-all">Faltam</span><span className="text-3xl font-bold text-[#C9A84C] tracking-tighter transition-all">{item.goal - item.reserved}</span></div> : <div className="bg-emerald-500/10 text-emerald-500 p-4 rounded-full border border-emerald-500/20 flex-shrink-0 shadow-lg transition-transform hover:scale-105 transition-all transition-all"><Check size={28} strokeWidth={3} /></div>}
                             </div>
                           </CardHeader>
                           <CardContent className="pt-3 text-left">
                             <p className="text-[#9CA3AF] text-base mb-10 font-light leading-relaxed">{item.description}</p>
-                            <div className="space-y-4 mb-10"><div className="flex justify-between text-[0.7rem] text-[#6B7280] tracking-[0.25em] uppercase font-bold"><span>Suprimento: {item.reserved}/{item.goal}</span><span className="text-[#D6D3D1]">{Math.round(progress)}%</span></div><div className="w-full h-2 bg-white/5 rounded-full overflow-hidden border border-white/5 shadow-sm"><div className="h-full bg-gradient-to-r from-[#7A5C10] via-[#C9A84C] to-[#FAEFC8] transition-all duration-700" style={{ width: `${progress}%` }} /></div></div>
-                            {!isComplete && <Button className="w-full hero-cta text-black font-bold uppercase text-[0.75rem] tracking-[0.3em] h-14 rounded-sm shadow-xl transition-all">Contribuir com este Item! <Heart size={18} className="ml-3" fill="currentColor" /></Button>}
+                            <div className="space-y-4 mb-10"><div className="flex justify-between text-[0.7rem] text-[#6B7280] tracking-[0.25em] uppercase font-bold"><span>Suprimento: {item.reserved}/{item.goal}</span><span className="text-[#D6D3D1]">{Math.round(progress)}%</span></div><div className="w-full h-2 bg-white/5 rounded-full overflow-hidden border border-white/5 shadow-sm transition-all"><div className="h-full bg-gradient-to-r from-[#7A5C10] via-[#C9A84C] to-[#FAEFC8] transition-all duration-700" style={{ width: `${progress}%` }} /></div></div>
+                            {!isComplete && <Button className="w-full hero-cta text-black font-bold uppercase text-[0.75rem] tracking-[0.3em] h-14 rounded-sm shadow-xl transition-all transition-all transition-all transition-all">Contribuir com este Item! <Heart size={18} className="ml-3" fill="currentColor" /></Button>}
                           </CardContent>
                         </Card>
                       );
@@ -440,37 +513,60 @@ export default function App() {
       <Dialog open={showModal} onOpenChange={setShowModal}>
         <DialogContent className="bg-[#0f0f0f] border-[#D4AF37]/40 text-white max-w-sm w-[90vw] p-5 md:p-8 rounded-3xl shadow-[0_0_120px_rgba(0,0,0,0.85)] backdrop-blur-3xl max-h-[94vh] overflow-y-auto no-scrollbar scroll-smooth">
           <div className="flex flex-col items-center w-full">
-            <DialogHeader className="text-center items-center mb-3"><DialogTitle className="text-xl md:text-2xl text-[#FAFAFA] font-serif tracking-tight">{selectedItemData?.name}</DialogTitle><div className="w-10 h-0.5 bg-[#C9A84C]/40 rounded-full mt-1" /></DialogHeader>
-            <div className="flex items-center justify-between w-full max-w-[280px] mt-2 mb-4 px-6 py-2 border border-white/5 rounded-full bg-white/[0.02] shadow-inner"><button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="text-[#C9A84C] p-2 hover:scale-110 transition-transform"><Minus size={16} /></button><span className="text-2xl md:text-3xl font-light text-[#FAFAFA] tracking-tighter">{quantity}</span><button onClick={() => setQuantity(Math.min(maxAvailable, quantity + 1))} className="text-[#C9A84C] p-2 hover:scale-110 transition-transform"><Plus size={16} /></button></div>
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full flex flex-col items-center">
-              <TabsList className="w-full bg-white/[0.03] grid grid-cols-2 mb-6 h-11 rounded-full p-1.5 border border-white/5 shadow-md"><TabsTrigger value="reserva" className="text-[0.6rem] uppercase tracking-[0.2em] rounded-full data-[state=active]:bg-[#C9A84C] data-[state=active]:text-black font-black">Reservar</TabsTrigger><TabsTrigger value="comprar" className="text-[0.6rem] uppercase tracking-[0.2em] rounded-full data-[state=active]:bg-[#C9A84C] data-[state=active]:text-black font-black">Comprar com pix</TabsTrigger></TabsList>
-              
-              <div className="w-full space-y-4 mt-6">
-                <input required value={formData.name} placeholder="SEU NOME" onChange={(e) => setFormData({...formData, name: e.target.value})} className="w-full bg-transparent border-b border-white/10 p-3 text-center text-sm focus:outline-none focus:border-[#C9A84C] transition-all placeholder:text-[#333] font-bold tracking-widest uppercase" />
-                <textarea value={formData.mensagem} placeholder="MENSAGEM DE APOIO (OPCIONAL)" onChange={(e) => setFormData({...formData, mensagem: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-xs focus:outline-none focus:border-[#C9A84C] resize-none h-16 transition-all" />
-              </div>
+            <DialogHeader className="text-center items-center mb-3">
+               <DialogTitle className="text-xl md:text-2xl text-[#FAFAFA] font-serif tracking-tight transition-all">
+                 {reservationSuccess ? "Reserva Realizada!" : selectedItemData?.name}
+               </DialogTitle>
+               <div className="w-10 h-0.5 bg-[#C9A84C]/40 rounded-full mt-1" />
+            </DialogHeader>
 
-              <TabsContent value="reserva" className="w-full animate-in fade-in zoom-in duration-300">
-                <div className="w-full flex flex-col items-center space-y-6">
-                  <div className="w-full bg-[#C9A84C]/5 border border-[#C9A84C]/20 p-5 rounded-2xl text-left shadow-inner mt-4"><div className="flex items-center gap-2 text-[#C9A84C] mb-3"><BookmarkCheck size={18} /><h4 className="font-bold text-[0.65rem] tracking-[0.2em] uppercase">Regra da Reserva</h4></div><p className="text-[0.8rem] text-[#D6D3D1] font-light leading-relaxed">Ao reservar <strong className="text-white font-bold">{quantity}x {selectedItemData?.name}</strong>, é de sua responsabilidade <strong className="text-[#C9A84C]">comprar o item fisicamente</strong> e entregá-lo em mãos.</p></div>
-                  <Button onClick={handleSubmit} disabled={!formData.name} className="w-full hero-cta text-black font-bold uppercase text-[0.7rem] tracking-[0.35em] h-14 rounded-sm shadow-2xl transition-transform active:scale-95">Confirmar Reserva</Button>
-                </div>
-              </TabsContent>
-              <TabsContent value="comprar" className="w-full flex flex-col items-center space-y-6 text-center animate-in fade-in zoom-in duration-300">
-                <div className="bg-white/[0.02] w-full p-4 md:p-5 rounded-3xl border border-white/5 shadow-inner mt-4"><p className="text-[0.55rem] uppercase tracking-[0.5em] text-[#6B7280] mb-1 font-bold">Preço estimado</p><span className="text-2xl md:text-3xl font-bold text-[#C9A84C] tracking-tighter">R$ {(selectedItem ? ITEM_PRICES_NUM[selectedItem.itemId] * quantity : 0).toFixed(2)}</span></div>
-                <Button onClick={handleAsaasPayment} disabled={paymentLoading || !formData.name} className="w-full hero-cta text-black font-bold uppercase text-[0.7rem] tracking-[0.35em] h-14 rounded-sm shadow-2xl transition-transform active:scale-95">{paymentLoading ? <Loader2 className="animate-spin" /> : "Gerar QR Code (PIX)"}</Button>
-              </TabsContent>
-            </Tabs>
+            {reservationSuccess ? (
+              <div className="w-full text-center space-y-6 py-4 animate-tab">
+                 <div className="w-16 h-16 bg-[#C9A84C]/20 text-[#C9A84C] rounded-full flex items-center justify-center mx-auto border-2 border-[#C9A84C]/30 shadow-lg transition-all"><Check size={32} /></div>
+                 <p className="text-sm text-[#9CA3AF] font-light leading-relaxed px-4">
+                   Obrigado por sua reserva! Clique abaixo para espalhar a missão e ajudar a bater as metas!
+                 </p>
+                 <Button onClick={handleRecrutarReforcos} className="w-full bg-[#C9A84C] hover:bg-[#FAEFC8] text-black font-bold uppercase text-[0.7rem] tracking-[0.2em] h-14 flex items-center justify-center gap-3 transition-all transition-all transition-all transition-all">
+                   <Share2 size={20} /> Recrutar Reforços
+                 </Button>
+                 <Button onClick={() => setShowModal(false)} className="w-full border border-white/5 text-[#6B7280] text-[0.6rem] uppercase tracking-widest h-10 mt-2 transition-all transition-all">Fechar</Button>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center justify-between w-full max-w-[280px] mt-2 mb-4 px-6 py-2 border border-white/5 rounded-full bg-white/[0.02] shadow-inner transition-all transition-all transition-all transition-all transition-all"><button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="text-[#C9A84C] p-2 hover:scale-110 transition-transform transition-all"><Minus size={16} /></button><span className="text-2xl md:text-3xl font-light text-[#FAFAFA] tracking-tighter transition-all">{quantity}</span><button onClick={() => setQuantity(Math.min(maxAvailable, quantity + 1))} className="text-[#C9A84C] p-2 hover:scale-110 transition-transform transition-all transition-all transition-all transition-all transition-all"><Plus size={16} /></button></div>
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full flex flex-col items-center transition-all">
+                  <TabsList className="w-full bg-white/[0.03] grid grid-cols-2 mb-6 h-11 rounded-full p-1.5 border border-white/5 shadow-md transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all"><TabsTrigger value="reserva" className="text-[0.6rem] uppercase tracking-[0.2em] rounded-full data-[state=active]:bg-[#C9A84C] data-[state=active]:text-black font-black transition-all">Reservar</TabsTrigger><TabsTrigger value="comprar" className="text-[0.6rem] uppercase tracking-[0.2em] rounded-full data-[state=active]:bg-[#C9A84C] data-[state=active]:text-black font-black transition-all">Comprar com pix</TabsTrigger></TabsList>
+                  
+                  <div className="w-full space-y-4 mt-6 transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all">
+                    <input required value={formData.name} placeholder="SEU NOME" onChange={(e) => setFormData({...formData, name: e.target.value})} className="w-full bg-transparent border-b border-white/10 p-3 text-center text-sm focus:outline-none focus:border-[#C9A84C] transition-all placeholder:text-[#333] font-bold tracking-widest uppercase transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all" />
+                    <textarea value={formData.mensagem} placeholder="MENSAGEM DE APOIO (OPCIONAL)" onChange={(e) => setFormData({...formData, mensagem: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-xs focus:outline-none focus:border-[#C9A84C] resize-none h-16 transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all" />
+                  </div>
+
+                  <TabsContent value="reserva" className="w-full animate-in fade-in zoom-in duration-300 transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all">
+                    <div className="w-full flex flex-col items-center space-y-6 transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all">
+                      <div className="w-full bg-[#C9A84C]/5 border border-[#C9A84C]/20 p-5 rounded-2xl text-left shadow-inner mt-4 transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all"><div className="flex items-center gap-2 text-[#C9A84C] mb-3 transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all"><BookmarkCheck size={18} transition-all /><h4 className="font-bold text-[0.65rem] tracking-[0.2em] uppercase transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all">Regra da Reserva</h4></div><p className="text-[0.8rem] text-[#D6D3D1] font-light leading-relaxed transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all">Ao reservar <strong className="text-white font-bold transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all">{quantity}x {selectedItemData?.name}</strong>, é de sua responsabilidade <strong className="text-[#C9A84C] transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all">comprar o item fisicamente</strong> e entregá-lo em mãos.</p></div>
+                      <Button onClick={handleSubmit} disabled={!formData.name} className="w-full hero-cta text-black font-bold uppercase text-[0.7rem] tracking-[0.35em] h-14 rounded-sm shadow-2xl transition-transform active:scale-95 transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all">Confirmar Reserva</Button>
+                    </div>
+                  </TabsContent>
+                  <TabsContent value="comprar" className="w-full flex flex-col items-center space-y-6 text-center animate-in fade-in zoom-in duration-300 transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all">
+                    <div className="bg-white/[0.02] w-full p-4 md:p-5 rounded-3xl border border-white/5 shadow-inner mt-4 transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all"><p className="text-[0.55rem] uppercase tracking-[0.5em] text-[#6B7280] mb-1 font-bold transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all">Preço estimado</p><span className="text-2xl md:text-3xl font-bold text-[#C9A84C] tracking-tighter transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all">R$ {(selectedItem ? ITEM_PRICES_NUM[selectedItem.itemId] * quantity : 0).toFixed(2)}</span></div>
+                    <Button onClick={handleAsaasPayment} disabled={paymentLoading || !formData.name} className="w-full hero-cta text-black font-bold uppercase text-[0.7rem] tracking-[0.35em] h-14 rounded-sm shadow-2xl transition-transform active:scale-95 transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all transition-all">{paymentLoading ? <Loader2 className="animate-spin" /> : "Gerar QR Code (PIX)"}</Button>
+                  </TabsContent>
+                </Tabs>
+              </>
+            )}
           </div>
         </DialogContent>
       </Dialog>
       
       <Dialog open={showMapModal} onOpenChange={setShowMapModal}>
         <DialogContent className="bg-[#0f0f0f] border-[#D4AF37]/40 text-white max-w-lg w-[95vw] p-6 md:p-8 rounded-3xl shadow-[0_0_120px_rgba(0,0,0,0.85)] backdrop-blur-3xl max-h-[92vh] overflow-y-auto no-scrollbar selection:bg-[#C9A84C] selection:text-black scroll-smooth">
-          <DialogHeader className="text-center items-center mb-6"><DialogTitle className="text-3xl mb-3 text-[#FAFAFA] font-serif tracking-tight" style={{ fontFamily: 'Playfair Display, serif' }}>Mapa da Missão</DialogTitle><div className="flex items-center gap-2 text-[#D6D3D1] tracking-[0.6em] uppercase text-[0.8rem] font-light"><MapPin size={18} className="text-[#C9A84C]" strokeWidth={1.5} /> Missão Uruguay · Salto</div><div className="w-16 h-0.5 bg-[#C9A84C]/40 rounded-full mt-4" /></DialogHeader>
-          <div className="bg-white/5 rounded-3xl p-4 flex flex-col items-center gap-4 shadow-inner border border-white/5 mt-4">
-              <div className="w-full h-72 md:h-80 bg-[#1a1a1a] rounded-2xl flex items-center justify-center border border-[#D4AF37]/10 overflow-hidden group"><img src="/mision.jpeg" alt="Mapa da Missão" className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700" onError={(e) => { e.currentTarget.src = 'https://placehold.co/600x400/1a1a1a/C9A84C?text=Foto+Nao+Encontrada'; }} /></div>
-             <p className="text-center text-sm md:text-base text-[#9CA3AF] font-light leading-relaxed px-4">A Missão <span className="text-[#FAFAFA] font-medium">Uruguay · Salto</span> abrange a região noroeste do país. Coordenadas aproximadas: <span className="text-[#C9A84C] font-bold">31°23'S 57°57'W</span>.</p>
+          <DialogHeader className="text-center items-center mb-6 transition-all transition-all transition-all"><DialogTitle className="text-3xl mb-3 text-[#FAFAFA] font-serif tracking-tight transition-all" style={{ fontFamily: 'Playfair Display, serif' }}>Mapa da Missão</DialogTitle><div className="flex items-center gap-2 text-[#D6D3D1] tracking-[0.6em] uppercase text-[0.8rem] font-light transition-all"><MapPin size={18} className="text-[#C9A84C]" strokeWidth={1.5} /> Missão Uruguay · Salto</div><div className="w-16 h-0.5 bg-[#C9A84C]/40 rounded-full mt-4 transition-all" /></DialogHeader>
+          <div className="bg-white/5 rounded-3xl p-4 flex flex-col items-center gap-4 shadow-inner border border-white/5 mt-4 transition-all">
+              <div className="w-full h-72 md:h-80 bg-[#1a1a1a] rounded-2xl flex items-center justify-center border border-[#D4AF37]/10 overflow-hidden group transition-all">
+                <img src="/mision.jpeg" alt="Mapa da Missão" className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700" onError={(e) => { e.currentTarget.src = 'https://placehold.co/600x400/1a1a1a/C9A84C?text=Foto+Nao+Encontrada'; }} />
+              </div>
+             <p className="text-center text-sm md:text-base text-[#9CA3AF] font-light leading-relaxed px-4 transition-all">A Missão <span className="text-[#FAFAFA] font-medium">Uruguay · Salto</span> abrange a região noroeste do país. Coordenadas aproximadas: <span className="text-[#C9A84C] font-bold">31°23'S 57°57'W</span>.</p>
           </div>
           <DialogFooter className="mt-10 flex justify-center w-full"><button onClick={() => setShowMapModal(false)} className="hero-cta text-black px-12 py-4 rounded-full font-bold tracking-[0.25em] uppercase text-xs shadow-2xl hover:scale-105 transition-all">Fechar Mapa</button></DialogFooter>
         </DialogContent>
