@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { Heart, ArrowRight, MapPin, Copy, Check, MessageCircle, ShoppingCart, BookmarkCheck, ChevronDown, Plus, Minus, Target, Loader2, Info } from "lucide-react";
 import { Button } from "./components/ui/button";
@@ -30,6 +30,7 @@ export default function App() {
   const [showInventory, setShowInventory] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [showPixScreen, setShowPixScreen] = useState(false); 
+  const [isPaid, setIsPaid] = useState(false); // NOVO ESTADO AQUI
   const [activeTab, setActiveTab] = useState("reserva");
   const [pixCopied, setPixCopied] = useState(false);
   const [quantity, setQuantity] = useState(1);
@@ -39,7 +40,7 @@ export default function App() {
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [pixData, setPixData] = useState<any>(null);
 
-  // LISTA DE ITENS COMPLETA (Com as suas categorias + os itens faltantes)
+  // LISTA DE ITENS COMPLETA
   const [categories, setCategories] = useState<Category[]>([
     {
       title: " Traje Missionário",
@@ -94,7 +95,7 @@ export default function App() {
     {
       title: "🛠️ Área de Testes",
       items: [
-        { id: "99", name: "Item de Teste PIX", description: "Item de R$ 1,00 para validação do sistema PIX.", goal: 1, reserved: 0, size: "Teste" },
+        { id: "99", name: "Item de Teste PIX", description: "Item de R$ 5,00 para validação do sistema PIX.", goal: 1, reserved: 0, size: "Teste" },
       ]
     }
   ]);
@@ -133,6 +134,30 @@ export default function App() {
       setPaymentLoading(false);
     }
   };
+
+  // --- CRONÔMETRO DE VALIDAÇÃO (POLLING) ---
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (showPixScreen && pixData?.id) {
+      interval = setInterval(async () => {
+        try {
+          const { data, error } = await supabase.rpc('check_asaas_status', { 
+            payment_id: pixData.id 
+          });
+          if (error) throw error;
+          
+          if (data === 'RECEIVED' || data === 'CONFIRMED') {
+            clearInterval(interval);
+            setIsPaid(true);
+            if (selectedItem) {
+              setCategories((prev) => prev.map((category, idx) => idx === selectedItem.categoryIndex ? { ...category, items: category.items.map((item) => item.id === selectedItem.itemId ? { ...item, reserved: Math.min(item.reserved + quantity, item.goal) } : item ), } : category ));
+            }
+          }
+        } catch (err) { console.log("Aguardando..."); }
+      }, 5000);
+    }
+    return () => clearInterval(interval);
+  }, [showPixScreen, pixData, selectedItem, quantity]);
 
   const handleSendWhatsApp = () => {
     const itemName = selectedItemData?.name ?? "item";
@@ -173,43 +198,68 @@ export default function App() {
           <nav className="sticky top-0 z-50 bg-[#0D0D0D]/95 backdrop-blur-xl border-b border-[#D4AF37]/15 p-4 md:p-6">
              <div className="max-w-[1200px] mx-auto flex justify-between items-center">
               <div className="text-[#C9A84C] font-bold tracking-widest text-lg" style={{ fontFamily: 'Playfair Display, serif' }}>E·B</div>
-              <button onClick={() => setShowPixScreen(false)} className="group flex items-center gap-2 text-[#C9A84C] text-[0.65rem] uppercase tracking-widest border border-[#C9A84C]/30 px-6 py-2.5 hover:bg-[#C9A84C]/10 transition-all rounded-sm font-semibold">
+              <button onClick={() => {setShowPixScreen(false); setIsPaid(false);}} className="group flex items-center gap-2 text-[#C9A84C] text-[0.65rem] uppercase tracking-widest border border-[#C9A84C]/30 px-6 py-2.5 hover:bg-[#C9A84C]/10 transition-all rounded-sm font-semibold">
                 <ArrowRight size={14} className="rotate-180 group-hover:-translate-x-1 transition-transform" /> Voltar à Lista
               </button>
             </div>
           </nav>
           
           <main className="flex-1 flex flex-col items-center justify-center p-6 w-full max-w-[600px] mx-auto text-center space-y-8">
-            <header className="space-y-4">
-              <h2 className="text-3xl md:text-5xl font-serif text-[#FAFAFA]" style={{ fontFamily: 'Playfair Display, serif' }}>{selectedItemData?.name}</h2>
-              <div className="bg-white/[0.02] border border-white/10 px-8 py-4 rounded-full inline-block shadow-inner">
-                <p className="text-[0.65rem] uppercase tracking-[0.4em] text-[#6B7280] mb-1 font-bold">Preço estimado</p>
-                <span className="text-4xl font-bold text-[#C9A84C] tracking-tighter">R$ {(selectedItem ? ITEM_PRICES_NUM[selectedItem.itemId] * quantity : 0).toFixed(2)}</span>
-              </div>
-            </header>
-
-            <div className="bg-white p-4 rounded-3xl border-4 border-[#C9A84C]/20 shadow-[0_0_60px_rgba(201,168,76,0.15)]">
-              {pixData?.encodedImage && (
-                <img src={`data:image/png;base64,${pixData.encodedImage}`} className="w-64 h-64 md:w-80 md:h-80 object-contain" alt="QR Code PIX" />
-              )}
-            </div>
-
-            <div className="w-full space-y-5">
-              <div className="flex items-center justify-between bg-black/50 px-5 py-4 rounded-2xl border border-white/10 shadow-inner group overflow-hidden">
-                <div className="flex-1 overflow-x-auto no-scrollbar text-left mr-4">
-                  <code className="text-[#C9A84C] text-sm tracking-tight font-mono whitespace-nowrap opacity-80 group-hover:opacity-100 transition-opacity">
-                    {pixData?.payload}
-                  </code>
+            {isPaid ? (
+              // --- TELA DE SUCESSO ---
+              <div className="space-y-6 animate-tab">
+                <div className="w-24 h-24 bg-[#25D366]/20 text-[#25D366] rounded-full flex items-center justify-center mx-auto border-4 border-[#25D366]/30 shadow-[0_0_60px_rgba(37,211,102,0.3)]">
+                  <Check size={48} strokeWidth={3} />
                 </div>
-                <button onClick={() => {navigator.clipboard.writeText(pixData.payload); setPixCopied(true); setTimeout(() => setPixCopied(false), 2000);}} className="text-[#C9A84C] p-3 bg-[#C9A84C]/10 rounded-xl hover:bg-[#C9A84C]/20 active:scale-90 transition-all flex-shrink-0">
-                  {pixCopied ? <Check size={24} /> : <Copy size={24} />}
-                </button>
+                <h2 className="text-4xl font-serif text-[#FAFAFA]" style={{ fontFamily: 'Playfair Display, serif' }}>Pagamento Confirmado!</h2>
+                <p className="text-[#9CA3AF] text-lg">Obrigado por sua!</p>
+                <Button onClick={() => {setShowPixScreen(false); setIsPaid(false);}} className="w-full hero-cta text-black font-bold uppercase tracking-[0.2em] h-14 mt-6">
+                  Voltar para a Lista
+                </Button>
               </div>
+            ) : (
+              // --- TELA DO QR CODE ---
+              <>
+                <header className="space-y-4">
+                  <h2 className="text-3xl md:text-5xl font-serif text-[#FAFAFA]" style={{ fontFamily: 'Playfair Display, serif' }}>{selectedItemData?.name}</h2>
+                  <div className="bg-white/[0.02] border border-white/10 px-8 py-4 rounded-full inline-block shadow-inner">
+                    <p className="text-[0.65rem] uppercase tracking-[0.4em] text-[#6B7280] mb-1 font-bold">Preço estimado</p>
+                    <span className="text-4xl font-bold text-[#C9A84C] tracking-tighter">R$ {(selectedItem ? ITEM_PRICES_NUM[selectedItem.itemId] * quantity : 0).toFixed(2)}</span>
+                  </div>
+                </header>
 
-              <Button onClick={handleSendWhatsApp} className="w-full bg-[#25D366] hover:bg-[#1da851] text-white font-bold text-[0.8rem] tracking-[0.3em] h-16 uppercase flex items-center justify-center gap-3 rounded-xl shadow-2xl transition-all">
-                <MessageCircle size={24} /> Já paguei! Enviar Comprovante
-              </Button>
-            </div>
+                <div className="bg-white p-4 rounded-3xl border-4 border-[#C9A84C]/20 shadow-[0_0_60px_rgba(201,168,76,0.15)]">
+                  {pixData?.encodedImage ? (
+                    <img src={`data:image/png;base64,${pixData.encodedImage}`} className="w-64 h-64 md:w-80 md:h-80 object-contain" alt="QR Code PIX" />
+                  ) : (
+                    <div className="w-64 h-64 flex items-center justify-center"><Loader2 className="animate-spin text-[#C9A84C]" size={40} /></div>
+                  )}
+                </div>
+
+                <div className="w-full space-y-5">
+                  <div className="flex items-center justify-between bg-black/50 px-5 py-4 rounded-2xl border border-white/10 shadow-inner group overflow-hidden">
+                    <div className="flex-1 overflow-x-auto no-scrollbar text-left mr-4">
+                      <code className="text-[#C9A84C] text-sm tracking-tight font-mono whitespace-nowrap opacity-80 group-hover:opacity-100 transition-opacity">
+                        {pixData?.payload}
+                      </code>
+                    </div>
+                    <button onClick={() => {navigator.clipboard.writeText(pixData.payload); setPixCopied(true); setTimeout(() => setPixCopied(false), 2000);}} className="text-[#C9A84C] p-3 bg-[#C9A84C]/10 rounded-xl hover:bg-[#C9A84C]/20 active:scale-90 transition-all flex-shrink-0">
+                      {pixCopied ? <Check size={24} /> : <Copy size={24} />}
+                    </button>
+                  </div>
+
+                  <Button onClick={handleSendWhatsApp} className="w-full bg-[#25D366] hover:bg-[#1da851] text-white font-bold text-[0.8rem] tracking-[0.3em] h-16 uppercase flex items-center justify-center gap-3 rounded-xl shadow-2xl transition-all">
+                    <MessageCircle size={24} /> Já paguei! Enviar Comprovante
+                  </Button>
+                  
+                  {/* TEXTO DE AVISO DO POLLING */}
+                  <div className="flex items-center justify-center gap-2 mt-4 text-[#C9A84C] opacity-70">
+                    <Loader2 className="animate-spin" size={14} />
+                    <p className="text-[0.65rem] uppercase tracking-widest font-bold">Aguardando confirmação do banco...</p>
+                  </div>
+                </div>
+              </>
+            )}
           </main>
         </div>
       ) : !showInventory ? (
@@ -354,11 +404,10 @@ export default function App() {
                 <TabsTrigger value="comprar" className="text-[0.6rem] uppercase tracking-[0.2em] rounded-full data-[state=active]:bg-[#C9A84C] data-[state=active]:text-black font-black">Comprar com pix</TabsTrigger>
               </TabsList>
               
-              {/* ABA DE RESERVA (COM RESUMO CLARO E OBRIGATORIEDADE) */}
+              {/* ABA DE RESERVA */}
               <TabsContent value="reserva" className="w-full animate-in fade-in zoom-in duration-300">
                 <div className="w-full flex flex-col items-center space-y-6">
                   
-                  {/* CAIXA DE AVISO / RESUMO DA RESERVA */}
                   <div className="w-full bg-[#C9A84C]/5 border border-[#C9A84C]/20 p-5 rounded-2xl text-left shadow-inner">
                     <div className="flex items-center gap-2 text-[#C9A84C] mb-3">
                       <BookmarkCheck size={18} />
@@ -376,6 +425,7 @@ export default function App() {
                 </div>
               </TabsContent>
               
+              {/* ABA DE COMPRA */}
               <TabsContent value="comprar" className="w-full flex flex-col items-center space-y-6 text-center animate-in fade-in zoom-in duration-300">
                 <div className="bg-white/[0.02] w-full p-4 md:p-5 rounded-3xl border border-white/5 shadow-inner">
                   <p className="text-[0.55rem] uppercase tracking-[0.5em] text-[#6B7280] mb-1 font-bold">Preço estimado</p>
