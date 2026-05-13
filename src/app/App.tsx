@@ -212,7 +212,7 @@ export default function App() {
                   <Check size={48} strokeWidth={3} />
                 </div>
                 <h2 className="text-4xl font-serif text-[#FAFAFA]" style={{ fontFamily: 'Playfair Display, serif' }}>Pagamento Confirmado!</h2>
-                <p className="text-[#9CA3AF] text-lg">Obrigado por sua Ajuda!</p>
+                <p className="text-[#9CA3AF] text-lg">Obrigado por sua!</p>
                 <Button onClick={() => {setShowPixScreen(false); setIsPaid(false);}} className="w-full hero-cta text-black font-bold uppercase tracking-[0.2em] h-14 mt-6">
                   Voltar para a Lista
                 </Button>
