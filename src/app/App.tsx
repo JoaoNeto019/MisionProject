@@ -92,6 +92,7 @@ export default function App() {
         { id: "23", name: "Protetor Solar", description: "Item obrigatório para o verão uruguaio.", goal: 1, reserved: 0, size: "Padrão" },
       ]
     },
+  ]);
 
   const totalGoal = categories.reduce((acc, cat) => acc + cat.items.reduce((sum, item) => sum + item.goal, 0), 0);
   const totalReserved = categories.reduce((acc, cat) => acc + cat.items.reduce((sum, item) => sum + item.reserved, 0), 0);
